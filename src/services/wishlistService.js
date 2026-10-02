@@ -48,18 +48,53 @@ export const getMyWishlist = async (userId) => {
        w.id,
        w.user_id,
        w.product_id,
+       p.category_id,
+       c.name AS category_name,
        p.name,
        p.slug,
        p.description,
        p.price,
+       p.compare_price,
        p.stock,
+       p.sizes,
+       p.colors,
        p.is_featured,
        p.is_active,
+
+       COALESCE(
+         json_agg(
+           pi.image_url
+           ORDER BY pi.sort_order ASC, pi.id ASC
+         ) FILTER (WHERE pi.id IS NOT NULL),
+         '[]'
+       ) AS images,
+
        w.created_at
      FROM wishlist w
      INNER JOIN products p
        ON w.product_id = p.id
+     LEFT JOIN categories c
+       ON p.category_id = c.id
+     LEFT JOIN product_images pi
+       ON p.id = pi.product_id
      WHERE w.user_id = $1
+     GROUP BY
+       w.id,
+       w.user_id,
+       w.product_id,
+       p.category_id,
+       c.name,
+       p.name,
+       p.slug,
+       p.description,
+       p.price,
+       p.compare_price,
+       p.stock,
+       p.sizes,
+       p.colors,
+       p.is_featured,
+       p.is_active,
+       w.created_at
      ORDER BY w.created_at DESC`,
     [userId]
   );
